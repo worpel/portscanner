@@ -21,7 +21,7 @@ else:
 # Get scan timestamp
 time = datetime.now().strftime('%d-%m-%Y at %H:%M')
 
-# Define port range. If empty, revert to 1-1023 as default (can only be opened by privileged users)
+# Define port range. If empty, revert to 1-1023 as default (these ports can only be opened by privileged users)
 portRange = input('Define port range that you want to scan (leave blank for well-known ports 1-1023): ')
 portRange = portRange if portRange else '1-1023'
 
