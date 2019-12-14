@@ -20,9 +20,6 @@ while True:
     else:
         break
 
-# Get scan timestamp
-time = datetime.now().strftime('%d-%m-%Y at %H:%M')
-
 # Define port range. If empty, revert to 1-1023 as default (these ports can only be opened by privileged users)
 portRange = input('Define port range that you want to scan (leave blank for well-known ports 1-1023): ')
 portRange = portRange if portRange else '1-1023'
@@ -34,42 +31,34 @@ else:
     portRange = input('Please enter a valid port range')
 
 # Format the port range for passing through to socket
-portRange = portRange.replace('-', ', ')
+portRange = portRange.split('-')
+startPort = int(portRange[0])
+endPort = int(portRange[1])
 
 # Output scan start date/time
-print('Started scan on', time)
+print('Started scan on', datetime.now().strftime(f'%d-%m-%Y at %H:%M:%S'))
 
 # Output scan host
 print('Scan report for', host)
 
-# TODO: Pass port range in as int as opposed to str - maybe split(',')
-for port in range(portRange):
+for port in range(startPort, endPort + 1):
     # Establish socket for IPv4 TCP scanning
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # Prevent timeout on socket connection
-    s.settimeout(5)
+    # Set timeout on socket connection
+    s.settimeout(1)
 
-    while True:
-        try:
-            # Convert port to integer before passing it into socket
-            port = int(port)
-            # Open socket TCP connection
-            connection = s.connect_ex((host, port))
-            # If connection successful, return open port and close socket
-            if connection == '0':
-                print(f'Discovered {port} open at', time)
-                socket.close()
-            else:
-                print(port)
-        # Close socket if a system-related error occurs
-        except socket.error:
-            print('Connection attempt unsuccessful')
-            socket.close()
-        # Close socket if an address-related error occurs
-        except socket.gaierror:
-            print('Unable to connect to host')
-            socket.close()
-        # Close socket is an unintended timeout occurs
-        except socket.timeout:
-            print('Connection attempt timed out')
-            socket.close()
+    try:
+        # Open socket TCP connection
+        connection = s.connect_ex((host, port))
+        # If connection successful, return open port
+        if connection ==  0:
+            print(datetime.now().strftime('%H:%M:%S') + f': Port {port} is open')
+    # Handle socket exceptions
+    except socket.error:
+        print('Connection attempt unsuccessful')
+    except socket.gaierror:
+        print('Unable to connect to host')
+    except socket.timeout:
+        print('Connection attempt timed out')
+
+print('Scan completed on', datetime.now().strftime(f'%d-%m-%Y at %H:%M:%S'))
