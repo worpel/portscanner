@@ -6,30 +6,43 @@ import socket
 from datetime import datetime
 # Import scapy for packet manipulation
 from scapy.all import *
+import sys
 
-# Prompt user for hostname. If it is a domain, resolve its IP address
+# Close application if script is not running as root
+if not os.geteuid() == 0:
+    sys.exit('Root is required')
+
+# Prompt user for host
 host = input('Enter the hostname or IP address of the target: ')
+scanType = input('Choose scan type: TCP or SYN (stealthy): ')
 
-
-# Check host is online
-def pingHost(ipAddress):
-    try:
-        packet = sr1(IP(dst=ipAddress) / ICMP(), timeout=5)
-        print(host, 'is online')
-    except:
-        print(host, 'is offline')
-
+# Check given host is online
+def pingHost(host):
+    if scanType == 'TCP':
+        while True:
+            try:
+                # Resolve host using socket
+                socket.gethostbyname(host)
+                host = socket.gethostbyname(host)
+                break
+            except Exception:
+                # If unable to connect, re-prompt
+                print('Unable to connect to', host)
+                host = input('Enter the hostname or IP address of the target: ')
+    elif scanType == 'SYN':
+        while True:
+            try:
+                # Craft ICMP packet to ping host using Scapy
+                packet = sr1(IP(dst=host)/ICMP(), timeout=5)
+                break
+            except Exception:
+                # If unable to connect, re-prompt
+                print('Unable to connect to', host)
+                host = input('Enter another host: ')
+    else:
+        sys.exit('Invalid scan type provided, exiting...')
 
 pingHost(host)
-
-# Basic validation for the host (still allows other forms of invalid input)
-while True:
-    if host == '':
-        host = input('Please enter a valid host: ')
-    elif host == '0.0.0.0':
-        host = input('Please enter a valid host: ')
-    else:
-        break
 
 # Define port range. If empty, revert to 1-1023 as default (these ports can only be opened by privileged users)
 portRange = input(
@@ -50,9 +63,6 @@ while True:
             break
     else:
         portRange = input('Please enter a valid port range: ')
-
-scanType = input(
-    'Choose scan type: TCP or TCP SYN (stealthy - requires root): ')
 
 # Output scan start date/time
 print('Started scan on', datetime.now().strftime(f'%d-%m-%Y at %H:%M:%S'))
